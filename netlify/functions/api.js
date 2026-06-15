@@ -1,12 +1,5 @@
-// ============================================================
-// ToneVault — Netlify Proxy Function
-// Injects Supabase service key server-side so it never ships
-// in the iOS binary. iOS app calls /api/* → this function
-// forwards to Supabase and returns the result.
-// ============================================================
-
-const SUPABASE_URL  = process.env.SUPABASE_URL
-const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -17,13 +10,14 @@ exports.handler = async (event) => {
     }
   }
 
-  const path  = event.path.replace('/.netlify/functions/api', '')
+  // Grab everything after /api/ regardless of how Netlify passes the path
+  const splat = event.path.split('/api/').pop()
   const query = event.rawQuery ? `?${event.rawQuery}` : ''
-  const url   = `${SUPABASE_URL}/rest/v1${path}${query}`
+  const url = `${SUPABASE_URL}/rest/v1/${splat}${query}`
 
   try {
     const res = await fetch(url, {
-      method:  event.httpMethod,
+      method: event.httpMethod,
       headers: {
         'Content-Type':  'application/json',
         'apikey':        SUPABASE_KEY,
